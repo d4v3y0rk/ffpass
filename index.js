@@ -2,11 +2,11 @@ const request = require('axios')
 const express = require('express')
 const app = express()
 const vin = process.env.VIN
-const apiToken = process.env.API_KEY
-const appId = process.env.APP_ID
+const fordUsername = process.env.FORD_USERNAME
+const fordPassword = process.env.FORD_PASSWORD
 
 var defaultHeaders = new Map()
-defaultHeaders.set('Application-Id', appId)
+defaultHeaders.set('Application-Id', "71A3AD0A-CF46-4CCF-B473-FC7FE5BC4592")
 defaultHeaders.set('Accept', '*/*')
 defaultHeaders.set('Accept-Language', 'en-us')
 defaultHeaders.set('User-Agent', 'fordpass-na/353 CFNetwork/1121.2.2 Darwin/19.3.0')
@@ -43,17 +43,23 @@ const extendTimeoutMiddleware = (req, res, next) => {
     next()
 }
 
-function auth() {
+// uses the fordpass username and password to grab an api token for the ford apis
+function auth(username, password) {
     return new Promise(async (resolve, reject) => {
-        var headers = Object.fromEntries(defaultHeaders)
+        var headersMap = new Map()
+        headersMap.set('Content-Type', 'application/x-www-form-urlencoded')
+        headersMap.set('User-Agent', 'fordpass-na/353 CFNetwork/1121.2.2 Darwin/19.3.0')
+        headersMap.set('Accept', '*/*')
+        headersMap.set('Accept-Language', 'en-us')
+        headersMap.set('Accept-Encoding', 'gzip, deflate, br')
+        var headers = Object.fromEntries(headersMap)
+
         var options = {
-            method: 'PUT',
-            baseURL: 'https://services.cx.ford.com/',
-            url: 'api/oauth2/v1/refresh',
+            method: 'POST',
+            baseURL: 'https://fcis.ice.ibmcloud.com/',
+            url: '/v1.0/endpoint/default/token',
             headers: headers,
-            data: {
-                "refresh_token": apiToken
-            }
+            data: `client_id=9fb503e0-715b-47e8-adfd-ad4b7770f73b&grant_type=password&username=${username}&password=${password}`
         }
         var result = await request(options)
         if (result.status == 200) {
@@ -115,6 +121,9 @@ function engineStatus(token, commandId) {
         }
         var output = await request(options)
         if (output.status == 200) {
+            if (output.data.status == 411) {
+                reject(`There was an error starting the engine.`)
+            }
             resolve(output.data.status)
         } else {
             reject(output.status)
@@ -191,9 +200,7 @@ app.get('/', async (req, res, next) => {
 
 app.get('/start', async (req, res, next) => {
     try {
-        //get auth token and make sure it is refreshed
-        var token = await auth()
-        //start car
+        var token = await auth(fordUsername, fordPassword)
         var result = await start(token)
         console.log(result.status)
         while (await engineStatus(token, result.commandId) != 200) {
@@ -212,9 +219,7 @@ app.get('/start', async (req, res, next) => {
 
 app.get('/stop', async (req, res, next) => {
     try {
-        //get auth token and make sure it is refreshed
-        var token = await auth()
-        //stop car
+        var token = await auth(fordUsername, fordPassword)
         var result = await stop(token)
         console.log(result.status)
         while (await engineStatus(token, result.commandId) != 200) {
@@ -233,9 +238,7 @@ app.get('/stop', async (req, res, next) => {
 
 app.get('/lock', async (req, res, next) => {
     try {
-        //get auth token and make sure it is refreshed
-        var token = await auth()
-        //stop car
+        var token = await auth(fordUsername, fordPassword)
         var result = await lock(token)
         console.log(result.status)
         while (await doorStatus(token, result.commandId) != 200) {
@@ -254,9 +257,7 @@ app.get('/lock', async (req, res, next) => {
 
 app.get('/unlock', async (req, res, next) => {
     try {
-        //get auth token and make sure it is refreshed
-        var token = await auth()
-        //stop car
+        var token = await auth(fordUsername, fordPassword)
         var result = await unlock(token)
         console.log(result.status)
         while (await doorStatus(token, result.commandId) != 200) {
