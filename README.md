@@ -12,3 +12,7 @@ After you get your key and VIN all you need to do is run this badboy in heroku a
 For example:
 `curl https://my-awesome-smartcar-app.herokuapp.com/start`
 (That will start your car)
+
+## Purpose
+
+I created this to enable interoperability between my computet and my car. As is allowed by U.S., Section 103(f) of the Digital Millennium Copyright Act.
