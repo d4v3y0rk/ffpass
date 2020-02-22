@@ -4,14 +4,32 @@ The Fordpass App requires you to put in a pin and tell it you are not driving an
 
 ## TL:DR
 
-In it's current state this little app won't do much for you. You need to figure out how to get an API key from the app on your phone and the VIN number of your vehicle to use it. You might want to check out mitmproxy in order to figure out how to get those pieces of information. Once you do you can supply them to this ExpressJS app and viola! Now you can do whatever you want with your car and delete that annoying app from your phone. 
+The code requires several environment variables to set set for it to work:
+```
+export FORD_USERNAME="<your fordpass username>"
+export FORD_PASSWORD="<your fordpass password>"
+export VIN="<your vehicle VIN number>"
+export MAPS_API_KEY="<a google maps api key>" // this is optional
+```
 
-## Usage
+Once you have those thing setup you can issue commands and check the status of your vehicle like this:
 
-After you get your key and VIN all you need to do is run this badboy in heroku and issue some commands!
-For example:
-`curl https://my-awesome-smartcar-app.herokuapp.com/start`
-(That will start your car)
+`node car.js --status`      // returns vehicle status information
+
+`node car.js --status --locate`     // returns vehicle status information with address from google maps
+
+`node car.js --start`       // issues engine start command to the vehicle
+
+`node car.js --stop`        // issues engine stop command to the vehicle
+
+`node car.js --lock`        // issues door lock command to the vehicle
+
+`node car.js --unlock`      // issues door unlock command to the vehicle
+
+
+## Heroku
+
+Aside from the car.js script you can push this to heroku, set the config variables and run it as an API. If you do this you can setup Siri Shortcuts on your iOS device to enable you to issue commands to your vehicle with your voice using Siri. 
 
 ## Purpose
 
