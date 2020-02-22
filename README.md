@@ -15,4 +15,4 @@ For example:
 
 ## Purpose
 
-I created this to enable interoperability between my computet and my car. As is allowed by U.S., Section 103(f) of the Digital Millennium Copyright Act.
+I created this to enable interoperability between my computer and my car. As is allowed by U.S., Section 103(f) of the Digital Millennium Copyright Act.
