@@ -6,7 +6,7 @@ If you find this useful let me know on Twitter. @d4v3y0rk
 
 ## TL:DR
 
-The code requires several environment variables to set set for it to work:
+The code requires several environment variables to set for it to work:
 ```
 export FORD_USERNAME="<your fordpass username>"
 export FORD_PASSWORD="<your fordpass password>"
