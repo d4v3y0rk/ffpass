@@ -1,6 +1,8 @@
 # Forget Fordpass
 
-The Fordpass App requires you to put in a pin and tell it you are not driving and takes forever to issue commands to your vehicle. This little nugget of code talks to the APIs and makes starting/stoping the engine and locking/unlocking the doors super easy. 
+The Fordpass App requires you to put in a pin and tell it you are not driving and takes forever to issue commands to your vehicle. This little nugget of code talks to the APIs and makes starting/stoping the engine and locking/unlocking the doors super easy.
+
+If you find this useful let me know on Twitter. @d4v3y0rk  
 
 ## TL:DR
 
