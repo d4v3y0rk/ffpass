@@ -33,6 +33,10 @@ Once you have those thing setup you can issue commands and check the status of y
 
 Aside from the car.js script you can push this to heroku, set the config variables and run it as an API. If you do this you can setup Siri Shortcuts on your iOS device to enable you to issue commands to your vehicle with your voice using Siri. 
 
+## WARNING ⚠️
+
+If you deploy this to Heroku without an authentication scheme anyone could control your car. 
+
 ## Purpose
 
 I created this to enable interoperability between my computer and my car. As is allowed by U.S., Section 103(f) of the Digital Millennium Copyright Act.
