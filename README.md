@@ -16,17 +16,17 @@ export MAPS_API_KEY="<a google maps api key>" // this is optional
 
 Once you have those thing setup you can issue commands and check the status of your vehicle like this:
 
-`node car.js --status`      // returns vehicle status information
+`node car.js --command=status`      // returns vehicle status information
 
-`node car.js --status --locate`     // returns vehicle status information with address from google maps
+`node car.js --command=status --locate`     // returns vehicle status information with address from google maps
 
-`node car.js --start`       // issues engine start command to the vehicle
+`node car.js --command=start`       // issues engine start command to the vehicle
 
-`node car.js --stop`        // issues engine stop command to the vehicle
+`node car.js --command=stop`        // issues engine stop command to the vehicle
 
-`node car.js --lock`        // issues door lock command to the vehicle
+`node car.js --command=lock`        // issues door lock command to the vehicle
 
-`node car.js --unlock`      // issues door unlock command to the vehicle
+`node car.js --command=unlock`      // issues door unlock command to the vehicle
 
 
 ## Heroku
