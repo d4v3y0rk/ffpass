@@ -1,21 +1,29 @@
 const request = require('axios')
 const argv = require('yargs').argv
 const NGo = require('node-geocoder')
+const qs = require('querystring')
 const vin = process.env.VIN
 const fordUsername = process.env.FORD_USERNAME
 const fordPassword = process.env.FORD_PASSWORD
+const googleMapsApiKey = `${process.env.MAPS_API_KEY || null}`
 
-// setup default headers for making requests to the ford api
+const fordAPIUrl = 'https://usapi.cv.ford.com/'
+
+// setup header objects
 var defaultHeaders = new Map()
-defaultHeaders.set('Application-Id', "71A3AD0A-CF46-4CCF-B473-FC7FE5BC4592")
 defaultHeaders.set('Accept', '*/*')
 defaultHeaders.set('Accept-Language', 'en-us')
+defaultHeaders.set('Content-Type', 'application/json')
 defaultHeaders.set('User-Agent', 'fordpass-na/353 CFNetwork/1121.2.2 Darwin/19.3.0')
 defaultHeaders.set('Accept-Encoding', 'gzip, deflate, br')
-defaultHeaders.set('content-type', 'application/json')
+
+var fordHeaders = new Map()
+fordHeaders.set('Application-Id', "71A3AD0A-CF46-4CCF-B473-FC7FE5BC4592")
+
+var iamHeaders = new Map()
+iamHeaders.set('Content-Type', 'application/x-www-form-urlencoded')
 
 // setup the google maps api for looking up address info from gps coordinates
-const googleMapsApiKey = `${process.env.MAPS_API_KEY || null}`
 var geoOptions = {
     provider: 'google',
     httpAdapter: 'https',
@@ -26,20 +34,21 @@ var geocoder = NGo(geoOptions)
 // uses the fordpass username and password to grab an api token for the ford apis
 function auth(username, password) {
     return new Promise(async (resolve, reject) => {
-        var headersMap = new Map()
-        headersMap.set('Content-Type', 'application/x-www-form-urlencoded')
-        headersMap.set('User-Agent', 'fordpass-na/353 CFNetwork/1121.2.2 Darwin/19.3.0')
-        headersMap.set('Accept', '*/*')
-        headersMap.set('Accept-Language', 'en-us')
-        headersMap.set('Accept-Encoding', 'gzip, deflate, br')
-        var headers = Object.fromEntries(headersMap)
-
+        // using the spread operator (...) to expand the maps into arrays and merge them into a new map
+        // the defaultHeader content-type is replaced in the resultant map because the same key/value pair exists
+        var authHeaders = new Map([...defaultHeaders, ...iamHeaders])
+        var headers = Object.fromEntries(authHeaders)
+        var requestData = new Map()
+        requestData.set('client_id', '9fb503e0-715b-47e8-adfd-ad4b7770f73b')
+        requestData.set('grant_type', 'password')
+        requestData.set('username', username)
+        requestData.set('password', password)
         var options = {
             method: 'POST',
             baseURL: 'https://fcis.ice.ibmcloud.com/',
             url: '/v1.0/endpoint/default/token',
             headers: headers,
-            data: `client_id=9fb503e0-715b-47e8-adfd-ad4b7770f73b&grant_type=password&username=${username}&password=${password}`
+            data: qs.stringify(Object.fromEntries(requestData))
         }
         var result = await request(options)
         if (result.status == 200) {
@@ -51,13 +60,14 @@ function auth(username, password) {
 }
 
 // lookup vehicle status data
-function status(token) {
+function vehicleStatus(token) {
     return new Promise(async (resolve, reject) => {
-        defaultHeaders.set('auth-token', token)
-        var headers = Object.fromEntries(defaultHeaders)
+        var apiHeaders = new Map([...defaultHeaders, ...fordHeaders])
+        apiHeaders.set('auth-token', token)
+        var headers = Object.fromEntries(apiHeaders)
         var options = {
             method: 'GET',
-            baseURL: 'https://usapi.cv.ford.com/',
+            baseURL: fordAPIUrl,
             url: `/api/vehicles/v4/${vin}/status`,
             headers: headers,
             params: {
@@ -66,22 +76,39 @@ function status(token) {
         }
         var result = await request(options)
         if (result.status == 200) {
-            resolve(result.data)
+            resolve(result.data.vehiclestatus)
         } else {
             reject(result.status)
         }
     })
 }
 
-// issue a remotestart *start* command to the vehicle
-function start(token) {
+function issueCommand(token, command) {
     return new Promise(async (resolve, reject) => {
-        defaultHeaders.set('auth-token', token)
-        var headers = Object.fromEntries(defaultHeaders)
+        var apiHeaders = new Map([...defaultHeaders, ...fordHeaders])
+        apiHeaders.set('auth-token', token)
+        var headers = Object.fromEntries(apiHeaders)
+        var method = ""
+        var url = ""
+        if (command == 'start') {
+            method = 'PUT'
+            url = `api/vehicles/v2/${vin}/engine/start`
+        } else if (command == 'stop') {
+            method = 'DELETE'
+            url = `api/vehicles/v2/${vin}/engine/start`
+        } else if (command == 'lock') {
+            method = 'PUT'
+            url = `api/vehicles/v2/${vin}/doors/lock`
+        } else if (command == 'unlock') {
+            method = 'DELETE'
+            url = `api/vehicles/v2/${vin}/doors/lock`
+        } else {
+            reject('No command specified for issueCommand!')
+        }
         var options = {
-            method: 'PUT',
-            baseURL: 'https://usapi.cv.ford.com/',
-            url: `api/vehicles/v2/${vin}/engine/start`,
+            method: method,
+            baseURL: fordAPIUrl,
+            url: url,
             headers: headers,
         }
         var result = await request(options)
@@ -93,104 +120,31 @@ function start(token) {
     })
 }
 
-// issue a remotestart *stop* command to the vehicle
-function stop(token) {
+// check the status of a vehicle command
+function commandStatus(token, command, commandId) {
     return new Promise(async (resolve, reject) => {
-        defaultHeaders.set('auth-token', token)
-        var headers = Object.fromEntries(defaultHeaders)
-        var options = {
-            method: 'DELETE',
-            baseURL: 'https://usapi.cv.ford.com/',
-            url: `api/vehicles/v2/${vin}/engine/start`,
-            headers: headers,
-        }
-        var result = await request(options)
-        if (result.status == 200) {
-            resolve(result.data)
+        var url = ""
+        if (command == 'start' || command == 'stop') {
+            url = `api/vehicles/v2/${vin}/engine/start/${commandId}`
+        } else if (command == 'lock' || command == 'unlock') {
+            url = `api/vehicles/v2/${vin}/doors/lock/${commandId}`
         } else {
-            reject(result.status)
+            reject('no command specified for commandStatus')
         }
-    })
-
-}
-
-// check the status of a remotestart command
-function engineStatus(token, commandId) {
-    return new Promise(async (resolve, reject) => {
-        defaultHeaders.set('auth-token', token)
-        var headers = Object.fromEntries(defaultHeaders)
+        var apiHeaders = new Map([...defaultHeaders, ...fordHeaders])
+        apiHeaders.set('auth-token', token)
+        var headers = Object.fromEntries(apiHeaders)
         var options = {
             method: 'GET',
-            baseURL: 'https://usapi.cv.ford.com/',
-            url: `api/vehicles/v2/${vin}/engine/start/${commandId}`,
+            baseURL: fordAPIUrl,
+            url: url,
             headers: headers,
         }
         var output = await request(options)
         if (output.status == 200) {
-            // if this code is returned from the api the command failed to start the engine for some reason
             if (output.data.status == 411) {
-                reject(`There was an error starting the engine.`)
+                reject(`There was an error executing the ${command} command to the vehicle.`)
             }
-            resolve(output.data.status)
-        } else {
-            reject(output.status)
-        }
-    })
-}
-
-// issue a door lock command to the vehicle
-function lock(token) {
-    return new Promise(async (resolve, reject) => {
-        defaultHeaders.set('auth-token', token)
-        var headers = Object.fromEntries(defaultHeaders)
-        var options = {
-            method: 'PUT',
-            baseURL: 'https://usapi.cv.ford.com/',
-            url: `api/vehicles/v2/${vin}/doors/lock`,
-            headers: headers,
-        }
-        var result = await request(options)
-        if (result.status == 200) {
-            resolve(result.data)
-        } else {
-            reject(result.status)
-        }
-    })
-}
-
-// issue a door unlock command to the vehicle
-function unlock(token) {
-    return new Promise(async (resolve, reject) => {
-        defaultHeaders.set('auth-token', token)
-        var headers = Object.fromEntries(defaultHeaders)
-        var options = {
-            method: 'DELETE',
-            baseURL: 'https://usapi.cv.ford.com/',
-            url: `api/vehicles/v2/${vin}/doors/lock`,
-            headers: headers,
-        }
-        var result = await request(options)
-        if (result.status == 200) {
-            resolve(result.data)
-        } else {
-            reject(result.status)
-        }
-    })
-}
-
-// check the status of a door command
-function doorStatus(token, commandId) {
-    return new Promise(async (resolve, reject) => {
-        defaultHeaders.set('auth-token', token)
-        var headers = Object.fromEntries(defaultHeaders)
-        var options = {
-            method: 'GET',
-            baseURL: 'https://usapi.cv.ford.com/',
-            url: `api/vehicles/v2/${vin}/doors/lock/${commandId}`,
-            headers: headers,
-        }
-        var output = await request(options)
-        if (output.status == 200) {
             resolve(output.data.status)
         } else {
             reject(output.status)
@@ -205,89 +159,41 @@ const sleep = (milliseconds) => {
 
 // main async function so we can use await
 async function main() {
-    if (argv.start) {
-        try {
-            var token = await auth(fordUsername, fordPassword)
-            var result = await start(token)
-            console.log(result.status)
-            while (await engineStatus(token, result.commandId) != 200) {
-                console.log(`Waiting for engine start...`)
-                await sleep(5000)
-            }
-            console.log('Engine Started!')
-        } catch (error) {
-            console.log('there was an error starting the engine!')
-        }
-    }
+    var token = await auth(fordUsername, fordPassword)
 
-    if (argv.stop) {
-        try {
-            var token = await auth(fordUsername, fordPassword)
-            var result = await stop(token)
-            console.log(result.status)
-            while (await engineStatus(token, result.commandId) != 200) {
-                console.log(`Waiting for engine stop...`)
-                await sleep(5000)
-            }
-            console.log('Engine Stopped!')
-        } catch (error) {
-            console.log('there was an error stopping the engine!')
-        }
-    }
-
-    if (argv.lock) {
-        try {
-            var token = await auth(fordUsername, fordPassword)
-            var result = await lock(token)
-            console.log(result.status)
-            while (await doorStatus(token, result.commandId) != 200) {
-                console.log(`Waiting for doors to lock...`)
-                await sleep(5000)
-            }
-            console.log('Doors Locked!')
-        } catch (error) {
-            console.log('there was an error locking the doors!')
-        }
-    }
-    
-    if (argv.unlock) {
-        try {
-            var token = await auth(fordUsername, fordPassword)
-            var result = await unlock(token)
-            console.log(result.status)
-            while (await doorStatus(token, result.commandId) != 200) {
-                console.log(`Waiting for doors to unlock...`)
-                await sleep(5000)
-            }
-            console.log('Doors Unlocked!')
-        } catch (error) {
-            console.log('There was an error unlocking the doors!')
-        }
-    }
-
-    if (argv.status) {
+    if (argv.command == 'status') {
         console.log(`Downloading vehicle status data...`)
         try {
-            var token = await auth(fordUsername, fordPassword)
-            var result = await status(token)
-            console.log(result.status)
-            console.log(`Engine State: ${result.vehiclestatus.ignitionStatus.value} \t\t(Refreshed: ${result.vehiclestatus.ignitionStatus.timestamp})`)
-            console.log(`Odometer Reading: ${Math.round(result.vehiclestatus.odometer.value/1.609344)} miles \t(Refreshed: ${result.vehiclestatus.odometer.timestamp})`)
-            console.log(`Battery Status: ${result.vehiclestatus.battery.batteryHealth.value} \t(Refreshed: ${result.vehiclestatus.battery.batteryHealth.timestamp})`)
-            console.log(`Oil Life: ${result.vehiclestatus.oil.oilLifeActual}% \t\t\t(Refreshed: ${result.vehiclestatus.oil.timestamp})`)
-            console.log(`Time Pressure: ${result.vehiclestatus.tirePressure.value} \t(Refreshed: ${result.vehiclestatus.tirePressure.timestamp})`)
-            console.log(`Distance to Empty: ${Math.round(result.vehiclestatus.fuel.distanceToEmpty/1.609344)} miles \t(Refreshed: ${result.vehiclestatus.fuel.timestamp})`)
+            var vehicleData = await vehicleStatus(token)
+            console.log(`Engine State: ${vehicleData.ignitionStatus.value} \t\t(Refreshed: ${vehicleData.ignitionStatus.timestamp})`)
+            console.log(`Odometer Reading: ${Math.round(vehicleData.odometer.value/1.609344)} miles \t(Refreshed: ${vehicleData.odometer.timestamp})`)
+            console.log(`Battery Status: ${vehicleData.battery.batteryHealth.value} \t(Refreshed: ${vehicleData.battery.batteryHealth.timestamp})`)
+            console.log(`Oil Life: ${vehicleData.oil.oilLifeActual}% \t\t\t(Refreshed: ${vehicleData.oil.timestamp})`)
+            console.log(`Tire Pressure: ${vehicleData.tirePressure.value} \t(Refreshed: ${vehicleData.tirePressure.timestamp})`)
+            console.log(`Distance to Empty: ${Math.round(vehicleData.fuel.distanceToEmpty/1.609344)} miles \t(Refreshed: ${vehicleData.fuel.timestamp})`)
             // either use the google maps api to lookup the address or don't based on the --locate argument
             if (argv.locate) {
-                var location = await geocoder.reverse({lat:result.vehiclestatus.gps.latitude, lon:result.vehiclestatus.gps.longitude})
+                var location = await geocoder.reverse({lat:vehicleData.gps.latitude, lon:vehicleData.gps.longitude})
                 console.log()
                 console.log(`Vehicle Location: \n${location[0].formattedAddress}`)
             } else {
                 console.log()
-                console.log(`Vehicle Location: \n${JSON.stringify(result.vehiclestatus.gps)}`)
+                console.log(`Vehicle Location: \n${JSON.stringify(vehicleData.gps)}`)
             }
         } catch (error) {
-            console.log(`There was an error getting vehicle status!`)
+            console.log(`There was an error getting vehicle status! ${error}`)
+        }
+    } else {
+        try {
+            var result = await issueCommand(token, argv.command)
+            console.log(result.status)
+            while (await commandStatus(token, argv.command, result.commandId) != 200) {
+                console.log(`Waiting for command ${argv.command} response...`)
+                await sleep(5000)
+            }
+            console.log(`Command: ${argv.command} executed successfully!`)
+        } catch (error) {
+            console.log(`There was an error sending the command: ${argv.command} to the vehicle!`)
         }
     }
 }
