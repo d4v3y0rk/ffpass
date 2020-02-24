@@ -275,7 +275,7 @@ async function main() {
             console.log(`Odometer Reading: ${Math.round(result.vehiclestatus.odometer.value/1.609344)} miles \t(Refreshed: ${result.vehiclestatus.odometer.timestamp})`)
             console.log(`Battery Status: ${result.vehiclestatus.battery.batteryHealth.value} \t(Refreshed: ${result.vehiclestatus.battery.batteryHealth.timestamp})`)
             console.log(`Oil Life: ${result.vehiclestatus.oil.oilLifeActual}% \t\t\t(Refreshed: ${result.vehiclestatus.oil.timestamp})`)
-            console.log(`Time Pressure: ${result.vehiclestatus.tirePressure.value} \t(Refreshed: ${result.vehiclestatus.tirePressure.timestamp})`)
+            console.log(`Tire Pressure: ${result.vehiclestatus.tirePressure.value} \t(Refreshed: ${result.vehiclestatus.tirePressure.timestamp})`)
             console.log(`Distance to Empty: ${Math.round(result.vehiclestatus.fuel.distanceToEmpty/1.609344)} miles \t(Refreshed: ${result.vehiclestatus.fuel.timestamp})`)
             // either use the google maps api to lookup the address or don't based on the --locate argument
             if (argv.locate) {
