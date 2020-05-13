@@ -1,17 +1,16 @@
 {
   "name": "ffsync",
   "version": "0.0.1",
-  "description": "Fuck Ford Sync",
+  "description": "Forget Ford Sync",
   "main": "index.js",
   "scripts": {
-    "test": "PORT=3000 node index.js",
-    "start": "node index.js"
+    "test": "node index.js"
   },
   "author": "Dave York",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.19.2",
-    "express": "^4.17.1",
+    "ffpass": "^1.0.1",
+    "http-status-code": "^2.1.0",
     "node-geocoder": "^3.25.0",
     "yargs": "^15.1.0"
   }

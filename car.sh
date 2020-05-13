@@ -1,2 +1,2 @@
 #!/bin/bash
-node car.js --command="$@"
+node index.js --command="$@"
