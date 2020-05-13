@@ -6,36 +6,29 @@ If you find this useful let me know on Twitter. @d4v3y0rk
 
 ## TL:DR
 
+UPDATE: I have moved the majority of the backend code to an NPM Module [ffpass](https://www.npmjs.com/package/ffpass)
+
 The code requires several environment variables to set for it to work:
 ```
 export FORD_USERNAME="<your fordpass username>"
 export FORD_PASSWORD="<your fordpass password>"
 export VIN="<your vehicle VIN number>"
-export MAPS_API_KEY="<a google maps api key>" // this is optional
+export MAPS_API_KEY="<a geocodio maps api key>" // this is optional
 ```
 
 Once you have those thing setup you can issue commands and check the status of your vehicle like this:
 
-`node car.js --command=status`      // returns vehicle status information
+`node index.js --command=status`      // returns vehicle status information
 
-`node car.js --command=status --locate`     // returns vehicle status information with address from google maps
+`node index.js --command=status --locate`     // returns vehicle status information with address from Geocodio
 
-`node car.js --command=start`       // issues engine start command to the vehicle
+`node index.js --command=start`       // issues engine start command to the vehicle
 
-`node car.js --command=stop`        // issues engine stop command to the vehicle
+`node index.js --command=stop`        // issues engine stop command to the vehicle
 
-`node car.js --command=lock`        // issues door lock command to the vehicle
+`node index.js --command=lock`        // issues door lock command to the vehicle
 
-`node car.js --command=unlock`      // issues door unlock command to the vehicle
-
-
-## Heroku
-
-Aside from the car.js script you can push this to heroku, set the config variables and run it as an API. If you do this you can setup Siri Shortcuts on your iOS device to enable you to issue commands to your vehicle with your voice using Siri. 
-
-## WARNING ⚠️
-
-If you deploy this to Heroku without an authentication scheme anyone could control your car. 
+`node index.js --command=unlock`      // issues door unlock command to the vehicle
 
 ## Purpose
 
