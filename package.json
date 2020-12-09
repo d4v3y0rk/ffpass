@@ -11,7 +11,7 @@
   "dependencies": {
     "ffpass": "^1.0.1",
     "http-status-code": "^2.1.0",
-    "node-geocoder": "^3.25.0",
-    "yargs": "^15.1.0"
+    "node-geocoder": "^3.27.0",
+    "yargs": "^15.4.1"
   }
 }
