@@ -1,6 +1,6 @@
 {
   "name": "ffsync",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Forget Ford Sync",
   "main": "index.js",
   "scripts": {
