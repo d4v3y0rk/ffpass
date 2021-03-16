@@ -2,14 +2,16 @@ const argv = require('yargs').argv
 const fordApi = require('ffpass')
 const NGo = require('node-geocoder')
 const code = require('http-status-code')
-const googleMapsApiKey = process.env.MAPS_API_KEY
+const geocodeProvider = process.env.GEOCODE_PROVIDER
+const geocodeProviderApiKey = process.env.GEOCODE_API_KEY
 const car = new fordApi.vehicle(process.env.FORD_USERNAME, process.env.FORD_PASSWORD, process.env.VIN)
  
-// setup the google maps api for looking up address info from gps coordinates
+// setup a geocode api provider to convert from GPS coordinates to an address
+// see https://www.npmjs.com/package/node-geocoder#geocoder-providers-in-alphabetical-order for provider options
 var geoOptions = {
-    provider: 'geocodio',
+    provider: geocodeProvider,
     httpAdapter: 'https',
-    apiKey: googleMapsApiKey,
+    apiKey: geocodeProviderApiKey,
 }
 var geocoder = NGo(geoOptions)
 

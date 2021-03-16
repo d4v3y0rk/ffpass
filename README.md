@@ -15,7 +15,8 @@ The code requires several environment variables to set for it to work:
 export FORD_USERNAME="<your fordpass username>"
 export FORD_PASSWORD="<your fordpass password>"
 export VIN="<your vehicle VIN number>"
-export MAPS_API_KEY="<a geocodio maps api key>" // this is optional
+export GEOCODE_PROVIDER="<a geocode provider>" // this is optional, see https://www.npmjs.com/package/node-geocoder#geocoder-providers-in-alphabetical-order for provider options
+export GEOCODE_API_KEY="<a geocode provider api key>" // this is optional
 ```
 
 Once you have those thing setup you can issue commands and check the status of your vehicle like this:
